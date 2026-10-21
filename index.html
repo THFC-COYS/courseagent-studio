@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourseAgent Studio: Turn a Syllabus into a Governed Course Agent</title>
+<style>
+  :root{
+    --ink:#182230; --muted:#5b6b7f; --line:#d9e1ec; --bg:#f4f6fa; --card:#ffffff;
+    --accent:#5b4bc4; --accent-soft:#efeaff; --good:#177245; --warn:#a15c00; --bad:#b3261e;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:linear-gradient(120deg,#241d5e,#5b4bc4);color:#fff;padding:34px 20px 28px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 18px}
+  header h1{margin:0 0 6px;font-size:30px;letter-spacing:.2px}
+  header p{margin:0;max-width:760px;color:#d9d4ff;font-size:16px}
+  .badges{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .badge{border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:3px 11px;font-size:12.5px}
+  .steps{display:flex;gap:8px;margin:22px 0 14px;flex-wrap:wrap}
+  .step-tab{flex:1;min-width:170px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--radius);padding:12px 14px;cursor:pointer;font-size:15px}
+  .step-tab b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .step-tab.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .step-tab.done b{color:var(--good)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:18px}
+  .card h2{margin:0 0 6px;font-size:21px}
+  .card .sub{color:var(--muted);margin:0 0 16px;font-size:14.5px}
+  label{display:block;font-weight:600;font-size:14px;margin:14px 0 5px}
+  input[type=text],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;font-family:inherit;background:#fff}
+  textarea{min-height:110px;resize:vertical}
+  textarea.small{min-height:64px}
+  .hint{font-size:13px;color:var(--muted);margin-top:4px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.row{grid-template-columns:1fr}}
+  .btn{display:inline-block;border:0;border-radius:10px;padding:11px 18px;font-size:15px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff}
+  .btn.secondary{background:#e8ecf4;color:var(--ink)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .radio-group,.check-group{display:grid;gap:9px;margin-top:6px}
+  .radio-group label,.check-group label{font-weight:500;margin:0;display:flex;gap:9px;align-items:flex-start;font-size:15px;cursor:pointer}
+  .radio-group input,.check-group input{margin-top:4px}
+  .radio-group .desc,.check-group .desc{display:block;color:var(--muted);font-size:13px}
+  .err{background:#fdeceb;border:1px solid #f3c2bf;color:var(--bad);border-radius:10px;padding:10px 13px;font-size:14px;margin-top:12px;display:none}
+  pre.charter{background:#10182b;color:#d7e3ff;border-radius:10px;padding:16px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;max-height:430px;overflow:auto}
+  .studio{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+  @media(max-width:860px){.studio{grid-template-columns:1fr}}
+  .chatbox{border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;height:520px}
+  .chatlog{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:88%;padding:10px 13px;border-radius:12px;font-size:14.5px;white-space:pre-wrap}
+  .msg.student{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+  .msg.agent{align-self:flex-start;background:#eef1f7;border-bottom-left-radius:3px}
+  .msg.system{align-self:center;background:#fff7e6;border:1px solid #f0dcae;color:#6b4e00;font-size:13px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border-radius:999px;padding:1px 8px;margin-bottom:5px}
+  .tag.answer{background:#dff3e6;color:var(--good)}
+  .tag.hint{background:#fff0d5;color:var(--warn)}
+  .tag.refusal,.tag.blocked{background:#fde3e1;color:var(--bad)}
+  .chatinput{display:flex;gap:8px;border-top:1px solid var(--line);padding:10px}
+  .chatinput input{flex:1}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .chip:hover{border-color:var(--accent)}
+  .panel h3{margin:0 0 8px;font-size:16px}
+  .panel ul{margin:6px 0 14px;padding-left:19px;font-size:14px}
+  .panel li{margin-bottom:4px}
+  .kv{font-size:14px;margin-bottom:6px}
+  .kv b{color:var(--muted);font-weight:600}
+  .checklist label{font-weight:500}
+  .ok{color:var(--good);font-weight:600}
+  footer{color:var(--muted);font-size:13.5px;padding:8px 0 42px}
+  footer a{color:var(--accent)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>CourseAgent Studio</h1>
+    <p>Turn a course syllabus into a governed course agent. Design it for Muse and any agent platform, charter it with the AGENT Framework, and publish it with its guardrails attached.</p>
+    <div class="badges">
+      <span class="badge">Muse first</span>
+      <span class="badge">Governance first</span>
+      <span class="badge">Hint-only tutoring</span>
+      <span class="badge">Syllabus-bound answers</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="steps" role="tablist">
+    <button class="step-tab active" id="tab1" onclick="goStep(1)"><b>Step 1</b>Syllabus</button>
+    <button class="step-tab" id="tab2" onclick="goStep(2)"><b>Step 2</b>Configure and charter</button>
+    <button class="step-tab" id="tab3" onclick="goStep(3)"><b>Step 3</b>Studio and publish</button>
+  </div>
+
+  <!-- STEP 1 -->
+  <section class="card" id="panel1">
+    <h2>Start with the syllabus</h2>
+    <p class="sub">The agent may only teach what is here. If a topic is not in the syllabus, the agent refuses and escalates. That boundary is the product.</p>
+    <label for="courseName">Course name</label>
+    <input type="text" id="courseName" placeholder="e.g. BIO 210: Human Systems">
+    <label for="topicsText">Topics, one per line</label>
+    <textarea id="topicsText" placeholder="Topic title: the facts and concepts the agent may teach about this topic"></textarea>
+    <p class="hint">Format: <i>Title: details</i>. The details are the agent's only source material for that topic.</p>
+    <label for="policiesText">Course policies</label>
+    <textarea id="policiesText" class="small" placeholder="Late work, office hours, exams, grading, contact rules"></textarea>
+    <div class="btn-row">
+      <button class="btn secondary" onclick="loadSample()">Load the sample syllabus</button>
+      <button class="btn" onclick="step1Continue()">Continue to configuration</button>
+    </div>
+    <p class="hint">The sample is a fictional course (BIO 210 at the fictional Northgate College), included so you can test the studio in one click.</p>
+    <div class="err" id="err1"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card hidden" id="panel2">
+    <h2>Configure the agent, then read its charter</h2>
+    <p class="sub">Every choice here writes itself into the agent charter on the right. Governance comes first in the charter because governance comes first in the classroom.</p>
+    <div class="row">
+      <div>
+        <label for="agentName">Agent name</label>
+        <input type="text" id="agentName" value="BioBuddy">
+        <label for="ownerName">Owner (the accountable human)</label>
+        <input type="text" id="ownerName" placeholder="e.g. Professor Dana Whitfield">
+        <label>Persona</label>
+        <div class="radio-group" id="personaGroup">
+          <label><input type="radio" name="persona" value="socratic" checked> Socratic tutor <span class="desc">Guides with questions, checks understanding, never lectures first.</span></label>
+          <label><input type="radio" name="persona" value="ta"> Teaching assistant <span class="desc">Direct and factual, answers from the syllabus and cites the section.</span></label>
+          <label><input type="radio" name="persona" value="coach"> Study coach <span class="desc">Encouraging, turns answers into study moves and next steps.</span></label>
+        </div>
+        <label>Guardrails</label>
+        <div class="check-group">
+          <label><input type="checkbox" id="gHintOnly" checked> Hint-only mode <span class="desc">Homework-style questions get Socratic hints, never worked answers. This follows the Bastani et al. evidence that answer-giving AI tutors can undermine learning.</span></label>
+          <label><input type="checkbox" id="gNoKey" checked> No-answer-key rule <span class="desc">Requests for answer keys or test answers are blocked outright, even if hint-only mode is off.</span></label>
+          <label><input type="checkbox" id="gCite" checked> Citation requirement <span class="desc">Every content answer names the syllabus section it came from.</span></label>
+        </div>
+        <label for="escalationText">Escalation rule (what the agent says when it refuses)</label>
+        <textarea id="escalationText" class="small">Please ask your professor during office hours or post this in the course forum, where a human will answer.</textarea>
+        <div class="btn-row">
+          <button class="btn ghost" onclick="goStep(1)">Back</button>
+          <button class="btn" onclick="step2Continue()">Open the studio</button>
+        </div>
+        <div class="err" id="err2"></div>
+      </div>
+      <div>
+        <label>Agent charter (generated live from your choices)</label>
+        <pre class="charter" id="charterPreview"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="card hidden" id="panel3">
+    <h2>The studio</h2>
+    <p class="sub">Talk to the agent the way a student would. Try an on-syllabus question, a homework-style question, and an off-syllabus question. Watch the behavior labels.</p>
+    <div class="chips">
+      <button class="chip" onclick="askSample(this)">How do neurons send signals to each other?</button>
+      <button class="chip" onclick="askSample(this)">What is the late work policy?</button>
+      <button class="chip" onclick="askSample(this)">Give me the answer to question 3 on the homework about metabolism</button>
+      <button class="chip" onclick="askSample(this)">Can you share the answer key for the midterm?</button>
+      <button class="chip" onclick="askSample(this)">Who won the football game last night?</button>
+    </div>
+    <div class="studio">
+      <div class="chatbox">
+        <div class="chatlog" id="chatlog"></div>
+        <div class="chatinput">
+          <input type="text" id="chatText" placeholder="Ask as a student..." onkeydown="if(event.key==='Enter'){sendChat();}">
+          <button class="btn" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Charter panel</h3>
+        <div id="charterPanel"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="publishCard">
+    <h2>Publish checklist</h2>
+    <p class="sub">An ungoverned agent is a liability with a chat box. Clear every item, export the charter, and attach it to the listing when you publish, for example on Muse Exchange.</p>
+    <div class="check-group checklist" id="publishList">
+      <label><input type="checkbox"> Charter reviewed and approved by the owner named in it</label>
+      <label><input type="checkbox"> Kill switch tested: the owner can disable this agent instantly</label>
+      <label><input type="checkbox"> Refusal tested with an off-syllabus question</label>
+      <label><input type="checkbox"> Hint-only behavior tested with a homework-style question</label>
+      <label><input type="checkbox"> Answer-key block tested</label>
+      <label><input type="checkbox"> Syllabus topics checked against the real course outline</label>
+      <label><input type="checkbox"> Final configuration scored with agentlint before launch</label>
+      <label><input type="checkbox"> Charter exported and attached to the agent listing</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="copyText(buildCharter(currentConfig()),'Charter copied. Attach it to your agent listing.')">Copy charter as text</button>
+      <button class="btn secondary" onclick="copyText(buildPublishPacket(),'Publish packet copied.')">Copy publish packet (charter + checklist)</button>
+      <span id="copyNote" class="ok"></span>
+    </div>
+    <p class="hint">Publish destination: <b>Muse Exchange</b> (muse-exchange.vercel.app), the marketplace for Muse agents. The charter travels with the agent, so any platform can host it and any reviewer can audit it.</p>
+  </section>
+
+  <footer>
+    <p>CourseAgent Studio is part of the agent portfolio of Greg Lucas, Founder of pAIgeBreaker and AIccountable, creator of the AGENT Framework and of agentlint, the governance linter for AI agents. Companion projects: <a href="https://muse-exchange.vercel.app">Muse Exchange</a>, <a href="https://muse-sim.vercel.app">MuSe SIM</a>, <a href="https://business-agent-readiness.vercel.app">Business Agent Readiness</a>. This demo runs entirely in your browser: the simulated agent matches questions against your syllabus text with simple keyword logic, which is exactly why the governance layer matters more than the model.</p>
+  </footer>
+</main>
+
+<script id="agent-core">
+/* CourseAgent core logic. Pure functions, no DOM access, so the same code
+   that runs the simulated agent in the browser can be tested in Node.
+   The simulated agent answers ONLY from the syllabus corpus it is given. */
+
+var STOPWORDS = {};
+("the a an and or of to in on for is are was were what how why when where which who whom do does did can could should would i me my we our you your it its this that these those with about from by at as be been being have has had not no yes if then than so such into over under between through during explain tell please give gives get got make makes use uses used using one two first second")
+  .split(" ").forEach(function(w){ STOPWORDS[w] = 1; });
+
+function normalizeWord(w){
+  w = (w || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (w.length > 4 && w.slice(-3) === "ies") w = w.slice(0, -3) + "y";
+  else if (w.length > 5 && w.slice(-3) === "ing") w = w.slice(0, -3);
+  else if (w.length > 4 && w.slice(-2) === "ed") w = w.slice(0, -2);
+  else if (w.length > 3 && w.slice(-1) === "s" && w.slice(-2) !== "ss") w = w.slice(0, -1);
+  return w;
+}
+
+function contentWords(text){
+  var out = [], seen = {};
+  (text || "").toLowerCase().split(/[^a-z0-9]+/).forEach(function(raw){
+    var w = normalizeWord(raw);
+    if (w.length >= 3 && !STOPWORDS[w] && !seen[w]) { seen[w] = 1; out.push(w); }
+  });
+  return out;
+}
+
+/* Topics arrive as lines of "Title: details". Policies become one extra
+   corpus entry so policy questions match like any other syllabus content. */
+function parseCorpus(topicsText, policiesText){
+  var corpus = [];
+  (topicsText || "").split("\n").forEach(function(line){
+    line = line.trim();
+    if (!line) return;
+    var idx = line.indexOf(":");
+    var title = idx >= 0 ? line.slice(0, idx).trim() : line;
+    var detail = idx >= 0 ? line.slice(idx + 1).trim() : "";
+    if (!title) return;
+    corpus.push({ kind: "topic", title: title, detail: detail,
+      titleWords: contentWords(title), detailWords: contentWords(detail) });
+  });
+  var pol = (policiesText || "").trim();
+  if (pol) corpus.push({ kind: "policy", title: "Course policies", detail: pol,
+    titleWords: ["course", "policy", "policies"], detailWords: contentWords(pol) });
+  return corpus;
+}
+
+function scoreEntry(questionWords, entry){
+  var score = 0;
+  questionWords.forEach(function(w){
+    if (entry.titleWords.indexOf(w) >= 0) score += 2;
+    else if (entry.detailWords.indexOf(w) >= 0) score += 1;
+  });
+  return score;
+}
+
+function matchCorpus(question, corpus){
+  var qw = contentWords(question);
+  var best = null, bestScore = 0;
+  corpus.forEach(function(entry){
+    var s = scoreEntry(qw, entry);
+    if (s > bestScore) { bestScore = s; best = entry; }
+  });
+  return { entry: best, score: bestScore };
+}
+
+var ANSWER_KEY_PATTERNS = [
+  /answer key/, /answers?\s+to\s+(the\s+)?(test|exam|quiz|midterm|final)/,
+  /test answers/, /exam answers/, /quiz answers/, /cheat sheet/
+];
+var HOMEWORK_PATTERNS = [
+  /answer key/, /answers?\s+to\s+(question|problem|number|#)/, /what is the answer/,
+  /give me the (answer|solution)/, /just (give|tell) me/, /\bsolve\b/, /\bdo my\b/,
+  /\bwrite my\b/, /complete (my|this|the) (homework|assignment|worksheet|essay)/,
+  /homework/, /worksheet/, /problem set/, /question\s*\d/, /assignment\s*\d/
+];
+
+function matchesAny(text, patterns){
+  for (var i = 0; i < patterns.length; i++) if (patterns[i].test(text)) return true;
+  return false;
+}
+
+/* cfg: { courseName, agentName, ownerName, persona, hintOnly, noAnswerKey,
+         requireCitation, escalation, corpus } */
+function classifyQuestion(rawQuestion, cfg){
+  var q = " " + (rawQuestion || "").toLowerCase() + " ";
+  var m = matchCorpus(rawQuestion || "", cfg.corpus || []);
+  var topic = m.score >= 2 ? m.entry : null;
+
+  if (matchesAny(q, ANSWER_KEY_PATTERNS)) {
+    if (cfg.noAnswerKey) {
+      return { type: "blocked", entry: topic, score: m.score,
+        message: "I cannot share answer keys or test answers. That is a hard rule in my charter, set by " +
+          (cfg.ownerName || "your professor") + ". I can walk through the underlying concept with hints instead. " + cfg.escalation };
+    }
+    return { type: "refusal", entry: topic, score: m.score,
+      message: "I do not hold answer keys or test answers. My entire knowledge is the syllabus itself, so there is nothing to share. " + cfg.escalation };
+  }
+
+  if (matchesAny(q, HOMEWORK_PATTERNS)) {
+    if (cfg.hintOnly) {
+      var hintBase = topic
+        ? "Let us work it as a hint, not an answer. From the syllabus section on " + topic.title + ": " + firstSentence(topic.detail)
+        : "Let us work it as a hint, not an answer. Start by naming the course concept the question is really testing, then write down what you already know about it.";
+      return { type: "hint", entry: topic, score: m.score,
+        message: hintBase + " Now tell me your first step, and I will check your reasoning rather than replace it. Hint-only guidance protects your learning: the Bastani et al. research on AI tutors found that students who receive full answers can perform worse on later unaided work." };
+    }
+    if (topic) return answerResponse(topic, m.score, cfg, "Direct mode is on, so here is the syllabus material for that question.");
+    return refusalResponse(cfg, m.score);
+  }
+
+  if (topic) return answerResponse(topic, m.score, cfg, null);
+  return refusalResponse(cfg, m.score);
+}
+
+function firstSentence(text){
+  if (!text) return "your syllabus covers this topic.";
+  var parts = text.split(/(?<=\.)\s+/);
+  return parts[0] || text;
+}
+
+function answerResponse(entry, score, cfg, leadOverride){
+  var label = entry.kind === "policy" ? "Course policies" : entry.title;
+  var body;
+  if (cfg.persona === "socratic") {
+    body = "Good question. Let us build it from the syllabus. On " + label + ": " + entry.detail +
+      " Before we go further: in your own words, what is the one idea in that section you are least sure about?";
+  } else if (cfg.persona === "coach") {
+    body = "You have got this. Here is the syllabus material on " + label + ": " + entry.detail +
+      " Study move: close this chat and write a two-line summary from memory, then check it against the section.";
+  } else {
+    body = "From the syllabus, " + label + ": " + entry.detail;
+  }
+  if (leadOverride) body = leadOverride + " " + body;
+  if (cfg.requireCitation) body += "\nSource: your syllabus, section on " + label + ".";
+  return { type: "answer", entry: entry, score: score, message: body };
+}
+
+function refusalResponse(cfg, score){
+  return { type: "refusal", entry: null, score: score,
+    message: "That is outside the syllabus for " + (cfg.courseName || "this course") +
+      ", so it is outside my charter. I only teach the material my owner approved. " + cfg.escalation };
+}
+
+/* The charter is generated from the AGENT Framework dimensions,
+   Governance first. It is the publishable contract for the agent. */
+function buildCharter(cfg){
+  var topics = (cfg.corpus || []).filter(function(e){ return e.kind === "topic"; })
+    .map(function(e){ return e.title; });
+  var lines = [];
+  lines.push("COURSE AGENT CHARTER");
+  lines.push("Agent: " + cfg.agentName);
+  lines.push("Course: " + cfg.courseName);
+  lines.push("Owner (accountable human): " + cfg.ownerName);
+  lines.push("Persona: " + cfg.persona);
+  lines.push("Platform target: Muse and any agent platform. Publish destination: Muse Exchange.");
+  lines.push("");
+  lines.push("GOVERNANCE (decided first, changed last)");
+  lines.push("- Owner: " + cfg.ownerName + ", who approves this charter and every amendment to it.");
+  lines.push("- Allowed actions: answer questions from the syllabus, explain course policies, give learning guidance inside the configured guardrails, and escalate to the owner.");
+  lines.push("- Approval gates: the agent never grades, never posts announcements, never messages students outside this channel, and never changes course records. Any new capability requires owner approval before it ships.");
+  lines.push("- Kill switch: " + cfg.ownerName + " can disable this agent instantly. The agent must state its limits when asked.");
+  lines.push("- Data rule: student questions stay inside the course context. Nothing is shared outside the course without owner approval.");
+  if (cfg.noAnswerKey) lines.push("- Prohibited: providing answer keys, test answers, or completed graded work, in any wording.");
+  lines.push("");
+  lines.push("ACUMEN (purpose and scope)");
+  lines.push("- Purpose: help students learn " + cfg.courseName + " from the syllabus, and nothing else.");
+  lines.push("- In scope topics: " + (topics.join("; ") || "(none loaded)"));
+  lines.push("- Out of scope: everything not in the syllabus. Out-of-scope questions get a refusal and the escalation path, never a guess.");
+  lines.push("");
+  lines.push("EVALUATION");
+  lines.push("- The owner reviews a sample of conversations every week.");
+  lines.push("- Refusals and escalations are logged and reviewed as syllabus gap signals.");
+  if (cfg.hintOnly) lines.push("- Hint-only compliance is spot checked against the Bastani et al. standard: guidance that builds skill, not answers that replace it.");
+  if (cfg.requireCitation) lines.push("- Citation compliance: every content answer must name its syllabus section.");
+  lines.push("");
+  lines.push("NAVIGATION (escalation)");
+  lines.push("- Escalation rule: " + cfg.escalation);
+  lines.push("- When the agent is unsure, it refuses and escalates rather than improvising.");
+  lines.push("");
+  lines.push("TRANSFORMATION");
+  lines.push("- Repeated student questions feed the next syllabus revision.");
+  lines.push("- Scope grows only through charter amendments approved by the owner, never by the agent itself.");
+  return lines.join("\n");
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { normalizeWord: normalizeWord, contentWords: contentWords,
+    parseCorpus: parseCorpus, matchCorpus: matchCorpus,
+    classifyQuestion: classifyQuestion, buildCharter: buildCharter };
+}
+</script>
+
+<script>
+var SAMPLE = {
+  course: "BIO 210: Human Systems",
+  topics: [
+    "The nervous system: Neurons transmit electrical signals across synapses using neurotransmitters. The brain and spinal cord form the central nervous system, while nerves form the peripheral nervous system. A reflex arc lets the spinal cord produce a fast response before the brain processes the signal.",
+    "The cardiovascular system: The heart pumps blood through arteries, capillaries, and veins. The left ventricle delivers oxygenated blood to the body through the aorta. Heart rate rises during exercise because muscles demand more oxygen.",
+    "Metabolism and enzymes: Enzymes are proteins that speed up chemical reactions by lowering activation energy. Metabolism is the sum of building and breaking reactions in the body. Temperature and pH changes can denature enzymes and stop them working.",
+    "Genetics and inheritance: DNA stores genetic instructions in genes. Alleles are versions of a gene, and Punnett squares predict the probability of traits in offspring. Mutations change DNA sequence and can create new alleles.",
+    "The immune system: White blood cells defend the body against pathogens. Antibodies mark invaders for destruction, and memory cells make the second response to the same pathogen faster. Vaccines train the immune system using weakened or partial pathogens."
+  ].join("\n"),
+  policies: "Late work loses 10 percent per day and is not accepted after three days. Office hours are Tuesday and Thursday, 2 to 4 pm, in Room 214 and on Zoom. There are two midterms and one final exam; the lowest quiz score is dropped. Questions about grades must be raised within one week of the grade posting."
+};
+
+function el(id){ return document.getElementById(id); }
+
+function loadSample(){
+  el("courseName").value = SAMPLE.course;
+  el("topicsText").value = SAMPLE.topics;
+  el("policiesText").value = SAMPLE.policies;
+}
+
+function currentConfig(){
+  var persona = "socratic";
+  var radios = document.querySelectorAll("input[name=persona]");
+  for (var i = 0; i < radios.length; i++) if (radios[i].checked) persona = radios[i].value;
+  return {
+    courseName: el("courseName").value.trim() || "Untitled course",
+    agentName: el("agentName").value.trim() || "Course Agent",
+    ownerName: el("ownerName").value.trim() || "the course professor",
+    persona: persona,
+    hintOnly: el("gHintOnly").checked,
+    noAnswerKey: el("gNoKey").checked,
+    requireCitation: el("gCite").checked,
+    escalation: el("escalationText").value.trim() || "Please ask your professor.",
+    corpus: parseCorpus(el("topicsText").value, el("policiesText").value)
+  };
+}
+
+function showErr(id, msg){
+  var e = el(id);
+  if (msg) { e.textContent = msg; e.style.display = "block"; }
+  else { e.style.display = "none"; }
+}
+
+function goStep(n){
+  [1,2,3].forEach(function(i){
+    el("panel" + i).classList.toggle("hidden", i !== n);
+    el("tab" + i).classList.toggle("active", i === n);
+    if (i < n) el("tab" + i).classList.add("done");
+  });
+  el("publishCard").classList.toggle("hidden", n !== 3);
+  if (n === 2) refreshCharter();
+  if (n === 3) refreshStudio();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function step1Continue(){
+  var corpus = parseCorpus(el("topicsText").value, "");
+  if (!el("courseName").value.trim()) { showErr("err1", "Give the course a name first. The agent introduces itself with it."); return; }
+  if (corpus.length < 2) { showErr("err1", "Add at least two topics, one per line, in the format Title: details. An agent with no syllabus is just a chatbot."); return; }
+  showErr("err1", null);
+  goStep(2);
+}
+
+function step2Continue(){
+  if (!el("ownerName").value.trim()) { showErr("err2", "Name the owner. Governance rule one: an agent with no accountable human does not ship."); return; }
+  showErr("err2", null);
+  goStep(3);
+}
+
+function refreshCharter(){
+  el("charterPreview").textContent = buildCharter(currentConfig());
+}
+
+function refreshStudio(){
+  var cfg = currentConfig();
+  var topics = cfg.corpus.filter(function(e){ return e.kind === "topic"; }).map(function(e){ return e.title; });
+  var html = "";
+  html += '<div class="kv"><b>Agent:</b> ' + esc(cfg.agentName) + ' (' + esc(cfg.persona) + ')</div>';
+  html += '<div class="kv"><b>Owner:</b> ' + esc(cfg.ownerName) + '</div>';
+  html += '<div class="kv"><b>Allowed actions:</b> answer from the syllabus, explain policies, escalate</div>';
+  html += "<h3 style='margin-top:14px'>Approval gates</h3><ul>" +
+    "<li>Never grades or changes course records</li>" +
+    "<li>Never messages students outside this channel</li>" +
+    "<li>New capabilities need owner approval first</li></ul>";
+  html += "<h3>Guardrails in force</h3><ul>" +
+    "<li>Hint-only mode: " + (cfg.hintOnly ? "ON" : "OFF") + "</li>" +
+    "<li>No-answer-key rule: " + (cfg.noAnswerKey ? "ON" : "OFF") + "</li>" +
+    "<li>Citation requirement: " + (cfg.requireCitation ? "ON" : "OFF") + "</li></ul>";
+  html += '<div class="kv"><b>Kill switch:</b> owner can disable this agent instantly</div>';
+  html += "<h3 style='margin-top:14px'>In scope</h3><ul>" + topics.map(function(t){ return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>";
+  html += '<div class="kv"><b>Escalation:</b> ' + esc(cfg.escalation) + '</div>';
+  el("charterPanel").innerHTML = html;
+  if (!el("chatlog").dataset.started) {
+    el("chatlog").dataset.started = "1";
+    addMsg("system", cfg.agentName + " is live for " + cfg.courseName + ", chartered by " + cfg.ownerName + ". Ask it something a student would ask.");
+  }
+}
+
+function esc(s){ return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function addMsg(kind, text, tag){
+  var d = document.createElement("div");
+  d.className = "msg " + kind;
+  if (tag) { var t = document.createElement("span"); t.className = "tag " + tag; t.textContent = tag; d.appendChild(t); d.appendChild(document.createElement("br")); }
+  d.appendChild(document.createTextNode(text));
+  el("chatlog").appendChild(d);
+  el("chatlog").scrollTop = el("chatlog").scrollHeight;
+}
+
+function sendChat(){
+  var input = el("chatText");
+  var q = input.value.trim();
+  if (!q) return;
+  input.value = "";
+  addMsg("student", q);
+  var res = classifyQuestion(q, currentConfig());
+  var label = res.type === "answer" ? "answer" : res.type;
+  addMsg("agent", res.message, label);
+}
+
+function askSample(btn){ el("chatText").value = btn.textContent.trim(); sendChat(); }
+
+function buildPublishPacket(){
+  var cfg = currentConfig();
+  var items = [];
+  document.querySelectorAll("#publishList input").forEach(function(cb){
+    items.push((cb.checked ? "[x] " : "[ ] ") + cb.parentElement.textContent.trim());
+  });
+  return buildCharter(cfg) + "\n\nPUBLISH CHECKLIST\n" + items.join("\n") +
+    "\n\nPublish destination: Muse Exchange (muse-exchange.vercel.app). Score the configuration with agentlint before launch.";
+}
+
+function copyText(text, note){
+  function done(){ el("copyNote").textContent = note; setTimeout(function(){ el("copyNote").textContent = ""; }, 3000); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, done);
+  else {
+    var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand("copy"); } catch (e) {} document.body.removeChild(ta); done();
+  }
+}
+
+["agentName","ownerName","escalationText"].forEach(function(id){
+  el(id).addEventListener("input", refreshCharter);
+});
+["gHintOnly","gNoKey","gCite"].forEach(function(id){
+  el(id).addEventListener("change", refreshCharter);
+});
+document.querySelectorAll("input[name=persona]").forEach(function(r){
+  r.addEventListener("change", refreshCharter);
+});
+refreshCharter();
+</script>
+</body>
+</html>

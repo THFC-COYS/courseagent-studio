@@ -1,0 +1,16 @@
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs and local tooling
+*.log
+node_modules/
+__pycache__/
+.venv/
+
+# Muse GitHub snapshot sync records (kept outside the repo, excluded on purpose)
+*.muse-github-snapshot-sync.json
+*.muse-github-snapshot-sync.json.tmp-*
