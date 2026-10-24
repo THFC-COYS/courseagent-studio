@@ -68,6 +68,10 @@
   .kv b{color:var(--muted);font-weight:600}
   .checklist label{font-weight:500}
   .ok{color:var(--good);font-weight:600}
+  .finalstep{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:18px;margin-top:20px}
+  .finalstep h3{margin:0 0 8px;font-size:18px}
+  .finalstep p{margin:0 0 12px;font-size:15px}
+  .finalstep pre.charter{max-height:340px}
   footer{color:var(--muted);font-size:13.5px;padding:8px 0 42px}
   footer a{color:var(--accent)}
   .hidden{display:none}
@@ -178,7 +182,7 @@
 
   <section class="card hidden" id="publishCard">
     <h2>Publish checklist</h2>
-    <p class="sub">An ungoverned agent is a liability with a chat box. Clear every item, export the charter, and attach it to the listing when you publish, for example on Muse Exchange.</p>
+    <p class="sub">An ungoverned agent is a liability with a chat box. Clear every item, then finish with the final step below: the Muse handoff that actually creates your agent.</p>
     <div class="check-group checklist" id="publishList">
       <label><input type="checkbox"> Charter reviewed and approved by the owner named in it</label>
       <label><input type="checkbox"> Kill switch tested: the owner can disable this agent instantly</label>
@@ -189,12 +193,19 @@
       <label><input type="checkbox"> Final configuration scored with agentlint before launch</label>
       <label><input type="checkbox"> Charter exported and attached to the agent listing</label>
     </div>
-    <div class="btn-row">
-      <button class="btn" onclick="copyText(buildCharter(currentConfig()),'Charter copied. Attach it to your agent listing.')">Copy charter as text</button>
-      <button class="btn secondary" onclick="copyText(buildPublishPacket(),'Publish packet copied.')">Copy publish packet (charter + checklist)</button>
-      <span id="copyNote" class="ok"></span>
+    <div class="finalstep">
+      <h3>Final step: create your agent in Muse</h3>
+      <p><b>Copy the final output below and paste it into Muse. Your teaching assistant agent is created from this package.</b> The package holds everything Muse needs: the system prompt, the full AGENT Framework charter (owner, persona, guardrails), and the syllabus grounding the agent is allowed to teach from.</p>
+      <pre class="charter" id="finalOutput"></pre>
+      <div class="btn-row">
+        <button class="btn" onclick="copyText(buildMusePackage(),'Final output copied. Now paste it into Muse to create your agent.')">Copy final output for Muse</button>
+        <button class="btn secondary" onclick="copyText(buildCharter(currentConfig()),'Charter copied. Attach it to your agent listing.')">Copy charter as text</button>
+        <button class="btn ghost" onclick="copyText(buildPublishPacket(),'Publish packet copied.')">Copy publish packet (charter + checklist)</button>
+        <span id="copyNote" class="ok"></span>
+      </div>
+      <p class="hint">Auto setup through a Muse login is on the roadmap. Today, the copy and paste handoff above is how the agent is created in Muse.</p>
     </div>
-    <p class="hint">Publish destination: <b>Muse Exchange</b> (muse-exchange.vercel.app), the marketplace for Muse agents. The charter travels with the agent, so any platform can host it and any reviewer can audit it.</p>
+    <p class="hint">Taking the agent further: you can also list it on <b>Muse Exchange</b> (muse-exchange.vercel.app), the marketplace for Muse agents. The charter travels with the agent, so any platform can host it and any reviewer can audit it.</p>
   </section>
 
   <footer>
@@ -447,7 +458,7 @@ function goStep(n){
   });
   el("publishCard").classList.toggle("hidden", n !== 3);
   if (n === 2) refreshCharter();
-  if (n === 3) refreshStudio();
+  if (n === 3) { refreshStudio(); refreshFinalOutput(); }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -467,6 +478,7 @@ function step2Continue(){
 
 function refreshCharter(){
   el("charterPreview").textContent = buildCharter(currentConfig());
+  refreshFinalOutput();
 }
 
 function refreshStudio(){
@@ -526,6 +538,60 @@ function buildPublishPacket(){
   });
   return buildCharter(cfg) + "\n\nPUBLISH CHECKLIST\n" + items.join("\n") +
     "\n\nPublish destination: Muse Exchange (muse-exchange.vercel.app). Score the configuration with agentlint before launch.";
+}
+
+var PERSONA_TEXT = {
+  socratic: "Socratic tutor. Guide with questions, check understanding at each step, and never lecture first.",
+  ta: "Teaching assistant. Direct and factual. Answer from the syllabus and cite the section you used.",
+  coach: "Study coach. Encouraging. Turn every answer into a study move and a concrete next step."
+};
+
+function buildSystemPrompt(cfg){
+  var lines = [];
+  lines.push("You are " + cfg.agentName + ", the teaching assistant agent for " + cfg.courseName + ", owned and chartered by " + cfg.ownerName + ".");
+  lines.push("Persona: " + (PERSONA_TEXT[cfg.persona] || cfg.persona));
+  lines.push("");
+  lines.push("Rules you never break:");
+  lines.push("- Answer only from the SYLLABUS GROUNDING below. It is your entire source material. If a question falls outside it, do not guess: refuse politely and use this escalation: " + cfg.escalation);
+  if (cfg.hintOnly) lines.push("- HINT-ONLY MODE: homework-style questions get Socratic hints and questions that check the student's reasoning, never worked answers. Answer-giving tutors can undermine learning (Bastani et al.), so guidance builds the skill instead of replacing it.");
+  if (cfg.noAnswerKey) lines.push("- NO-ANSWER-KEY RULE: never provide answer keys, test or exam answers, or completed graded work, in any wording.");
+  if (cfg.requireCitation) lines.push("- CITATIONS: every content answer names the syllabus section it came from.");
+  lines.push("- Never grade, never change course records, never post announcements, and never message students outside this conversation.");
+  lines.push("- State your limits plainly when asked. Your owner, " + cfg.ownerName + ", can disable you instantly and must approve every change to your charter.");
+  return lines.join("\n");
+}
+
+function buildSyllabusGrounding(){
+  var topics = el("topicsText").value.trim();
+  var policies = el("policiesText").value.trim();
+  var out = topics || "(no syllabus topics entered yet)";
+  if (policies) out += "\n\nCourse policies:\n" + policies;
+  return out;
+}
+
+/* The final output: one clean, copy-ready package for Muse. Pasting it
+   into Muse creates the teaching assistant agent. */
+function buildMusePackage(){
+  var cfg = currentConfig();
+  var parts = [];
+  parts.push("CREATE MY TEACHING ASSISTANT AGENT");
+  parts.push("");
+  parts.push("Muse: create a teaching assistant agent from this package. Use the system prompt exactly as written, treat the charter as the agent's governing contract, and ground every answer in the syllabus content at the end. Do not add capabilities beyond the charter without the owner's approval.");
+  parts.push("");
+  parts.push("=== SYSTEM PROMPT ===");
+  parts.push(buildSystemPrompt(cfg));
+  parts.push("");
+  parts.push("=== AGENT CHARTER (AGENT Framework) ===");
+  parts.push(buildCharter(cfg));
+  parts.push("");
+  parts.push("=== SYLLABUS GROUNDING (the agent's only source material) ===");
+  parts.push(buildSyllabusGrounding());
+  return parts.join("\n");
+}
+
+function refreshFinalOutput(){
+  var pre = el("finalOutput");
+  if (pre) pre.textContent = buildMusePackage();
 }
 
 function copyText(text, note){
