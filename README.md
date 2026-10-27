@@ -20,7 +20,7 @@ No build step, no dependencies, no server. One file: open `index.html` in any mo
 
 **Step 1: Syllabus.** Enter the course name, the topics (one per line, as `Title: details`), and the course policies. The details you write are the agent's only source material. A built-in sample syllabus (BIO 210: Human Systems, a fictional course at the fictional Northgate College) loads in one click so you can test the studio immediately.
 
-**Step 2: Configure and charter.** Name the agent, name its owner (the accountable human; the studio will not proceed without one), pick a persona (Socratic tutor, teaching assistant, or study coach), and set the guardrails:
+**Step 2: Configure and charter.** Name the owner (the accountable human; the studio will not proceed without one), pick a persona (Socratic tutor, teaching assistant, or study coach), and set the guardrails:
 
 - **Hint-only mode.** Homework-style questions get Socratic hints, never worked answers. This follows the Bastani et al. research on AI tutors, which found that students with access to answer-giving AI can perform worse on later unaided work.
 - **No-answer-key rule.** Requests for answer keys or test answers are blocked outright, even if hint-only mode is off.
@@ -28,13 +28,15 @@ No build step, no dependencies, no server. One file: open `index.html` in any mo
 
 As you configure, the studio generates the **agent charter** live, structured on the AGENT Framework with Governance first: owner, allowed actions, approval gates (never grades, never messages students outside the channel, never changes course records), a kill switch the owner can pull instantly, a data rule, the in-scope topic list, weekly evaluation duties, the escalation path, and a transformation loop that feeds student questions back into the next syllabus revision.
 
-**Step 3: Studio and publish.** Chat with the agent as a student would. Behavior labels show what the agent decided: `answer` (matched to a syllabus topic, cited), `hint` (homework-style question redirected to guided reasoning), `blocked` (answer-key request refused by charter rule), or `refusal` (off-syllabus, answered with the escalation path). The charter panel sits beside the chat so the contract and the behavior are visible at the same time. The publish checklist then walks the launch: charter approved by the owner, kill switch tested, refusal and hint behavior tested, configuration scored with agentlint, charter exported and attached to the listing on Muse Exchange. The final step creates the agent itself: the studio assembles one copy-ready final output (the system prompt, the full charter, and the syllabus grounding) and instructs the professor plainly: copy the final output and paste it into Muse, and the teaching assistant agent is created from that package. Auto setup through a Muse login is on the roadmap; today, the copy and paste handoff is how the agent is created in Muse.
+**Step 3: Soul.** The guardrails say what the agent must never do to the course; the soul says who the agent is when it teaches. Name the agent (or accept the persona based default; the package never ships with an empty name), shape its identity statement from the composed starter and edit it freely, pick its bearing (patient, encouraging, precise, curious, steady), choose its values from chips and your own lines, and add never-do rules beyond the guardrails: preset chips plus your own rules in your own words, carried into the package verbatim. Last, the voice: a sample line is generated from your persona and course, and you approve or edit it. The text you leave in that box is the text that ships.
+
+**Step 4: Studio and publish.** Chat with the agent as a student would. Behavior labels show what the agent decided: `answer` (matched to a syllabus topic, cited), `hint` (homework-style question redirected to guided reasoning), `blocked` (answer-key request refused by charter rule), or `refusal` (off-syllabus, answered with the escalation path). The charter panel sits beside the chat so the contract and the behavior are visible at the same time. The publish checklist then walks the launch: charter approved by the owner, kill switch tested, refusal and hint behavior tested, configuration scored with agentlint, charter exported and attached to the listing on Muse Exchange. The final step creates the agent itself: the studio assembles one copy-ready final output in three sections (Section 1: who your agent is, the soul; Section 2: what your agent does, the system prompt and the syllabus grounding; Section 3: where the instructor stays in charge, the full charter) and instructs the professor plainly: copy the final output and paste it into Muse, and the teaching assistant agent is created from that package. Auto setup through a Muse login is on the roadmap; today, the copy and paste handoff is how the agent is created in Muse.
 
 ## How the simulation works, honestly
 
 This demo runs entirely in the browser with no model and no network calls. The simulated agent classifies each question with simple, inspectable logic: keyword and topic matching against the syllabus corpus you provided, pattern checks for answer-key and homework-style requests, and the guardrail configuration you set. That is deliberate. If a demo agent this simple needs a charter, an owner, approval gates, and a kill switch, then a production agent built on a frontier model needs them even more. The governance layer is the technology this project is actually demonstrating.
 
-The core logic lives in one script block in `index.html` (`id="agent-core"`), written as pure functions with no DOM access, so it can be lifted out and unit tested in Node, or replaced with a real model call behind the same charter.
+The core logic lives in one script block in `index.html` (`id="agent-core"`), written as pure functions with no DOM access, so it can be lifted out and unit tested in Node, or replaced with a real model call behind the same charter. The classifier, the charter, the package, and the soul fields are covered by assertions against that block: run `node tests/harness.js`.
 
 ## The governance thread
 
@@ -50,6 +52,7 @@ CourseAgent Studio is the higher-education expression of a body of work on safe 
 | File | What it is |
 | --- | --- |
 | `index.html` | The whole studio: interface, charter generator, and the simulated syllabus-bound agent |
+| `tests/harness.js` | Node assertions against the `agent-core` block |
 | `README.md` | This file |
 | `LICENSE` | MIT license |
 

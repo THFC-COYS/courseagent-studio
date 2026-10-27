@@ -95,7 +95,8 @@
   <div class="steps" role="tablist">
     <button class="step-tab active" id="tab1" onclick="goStep(1)"><b>Step 1</b>Syllabus</button>
     <button class="step-tab" id="tab2" onclick="goStep(2)"><b>Step 2</b>Configure and charter</button>
-    <button class="step-tab" id="tab3" onclick="goStep(3)"><b>Step 3</b>Studio and publish</button>
+    <button class="step-tab" id="tab3" onclick="goStep(3)"><b>Step 3</b>Soul: who your agent is</button>
+    <button class="step-tab" id="tab4" onclick="goStep(4)"><b>Step 4</b>Studio and publish</button>
   </div>
 
   <!-- STEP 1 -->
@@ -123,8 +124,7 @@
     <p class="sub">Every choice here writes itself into the agent charter on the right. Governance comes first in the charter because governance comes first in the classroom.</p>
     <div class="row">
       <div>
-        <label for="agentName">Agent name</label>
-        <input type="text" id="agentName" value="BioBuddy">
+        <p class="hint" style="margin-top:0">The agent is named in the Soul step, where its identity, values, and voice are set. A persona based default is filled in if you leave it blank.</p>
         <label for="ownerName">Owner (the accountable human)</label>
         <input type="text" id="ownerName" placeholder="e.g. Professor Dana Whitfield">
         <label>Persona</label>
@@ -143,7 +143,7 @@
         <textarea id="escalationText" class="small">Please ask your professor during office hours or post this in the course forum, where a human will answer.</textarea>
         <div class="btn-row">
           <button class="btn ghost" onclick="goStep(1)">Back</button>
-          <button class="btn" onclick="step2Continue()">Open the studio</button>
+          <button class="btn" onclick="step2Continue()">Continue to soul</button>
         </div>
         <div class="err" id="err2"></div>
       </div>
@@ -154,8 +154,44 @@
     </div>
   </section>
 
-  <!-- STEP 3 -->
+  <!-- STEP 3: SOUL -->
   <section class="card hidden" id="panel3">
+    <h2>Give your agent a soul</h2>
+    <p class="sub">The guardrails say what the agent must never do to the course. The soul says who the agent is when it teaches: its name, its identity, how it carries itself, what it optimizes for, the never-do rules you add in your own words, and the voice students hear. Everything on this page lands in Section 1 of your package.</p>
+    <label for="agentName">Agent name</label>
+    <input type="text" id="agentName" value="BioBuddy">
+    <p class="hint">Leave it blank and the studio uses a default drawn from your persona. The package never ships with an empty name.</p>
+    <label for="soulIdentity">Identity statement</label>
+    <input type="text" id="soulIdentity">
+    <p class="hint">One line, composed for you from your persona and course. Edit it freely. What you leave here is what the package carries.</p>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn ghost" onclick="regenerateIdentity()">Rewrite it from my persona</button>
+    </div>
+    <label>Character: how the agent carries itself</label>
+    <div class="check-group" id="bearingGroup"></div>
+    <label>Values: what it optimizes for, and what it refuses</label>
+    <div class="check-group" id="valueGroup"></div>
+    <label for="valuesText">Your own values, one per line</label>
+    <textarea id="valuesText" class="small" placeholder="e.g. Worked examples always come after the student's own attempt"></textarea>
+    <label>Never-do rules, beyond the guardrails</label>
+    <div class="check-group" id="neverGroup"></div>
+    <label for="neverDoText">Your own never-do rules, one per line, in your words</label>
+    <textarea id="neverDoText" class="small" placeholder="e.g. Never discuss one student's grades with another student"></textarea>
+    <p class="hint">These sit on top of the Step 2 guardrails (hint-only mode, the no-answer-key rule, citations), which stay in the charter. Your lines are copied into the package exactly as you write them.</p>
+    <label for="voiceSample">Voice in messages: your approved sample line</label>
+    <textarea id="voiceSample" class="small"></textarea>
+    <p class="hint">Generated from your persona and course. Approve it as is, or edit it until it sounds like the teacher you want in the room. The text you leave in this box is the text that ships.</p>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn ghost" onclick="regenerateVoice()">Regenerate the sample</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="goStep(2)">Back</button>
+      <button class="btn" onclick="goStep(4)">Open the studio</button>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="card hidden" id="panel4">
     <h2>The studio</h2>
     <p class="sub">Talk to the agent the way a student would. Try an on-syllabus question, a homework-style question, and an off-syllabus question. Watch the behavior labels.</p>
     <div class="chips">
@@ -195,10 +231,10 @@
     </div>
     <div class="finalstep">
       <h3>Final step: create your agent in Muse</h3>
-      <p><b>Copy the final output below and paste it into Muse. Your teaching assistant agent is created from this package.</b> The package holds everything Muse needs: the system prompt, the full AGENT Framework charter (owner, persona, guardrails), and the syllabus grounding the agent is allowed to teach from.</p>
+      <p><b>Copy the final output below and paste it into Muse. Your teaching assistant agent is created from this package.</b> The package holds everything Muse needs, in three sections: who your agent is (its soul: name, identity, character, values, never-do rules, and voice), what your agent does (the system prompt and the syllabus grounding the agent is allowed to teach from), and where the instructor stays in charge (the full AGENT Framework charter: owner, persona, guardrails).</p>
       <pre class="charter" id="finalOutput"></pre>
       <div class="btn-row">
-        <button class="btn" onclick="copyText(buildMusePackage(),'Final output copied. Now paste it into Muse to create your agent.')">Copy final output for Muse</button>
+        <button class="btn" onclick="copyText(buildMusePackage(currentConfig(), buildSyllabusGrounding()),'Final output copied. Now paste it into Muse to create your agent.')">Copy final output for Muse</button>
         <button class="btn secondary" onclick="copyText(buildCharter(currentConfig()),'Charter copied. Attach it to your agent listing.')">Copy charter as text</button>
         <button class="btn ghost" onclick="copyText(buildPublishPacket(),'Publish packet copied.')">Copy publish packet (charter + checklist)</button>
         <span id="copyNote" class="ok"></span>
@@ -357,6 +393,209 @@ function refusalResponse(cfg, score){
       ", so it is outside my charter. I only teach the material my owner approved. " + cfg.escalation };
 }
 
+/* ---------- The soul: who the agent is, before what it does. ---------- */
+
+/* The role phrase each persona contributes to the identity statement. */
+var PERSONA_ROLES = {
+  socratic: "Socratic tutor",
+  ta: "teaching assistant",
+  coach: "study coach"
+};
+
+/* Default names drawn from the chosen persona. Used whenever the
+   instructor leaves the name blank, so no charter or package ever
+   carries an empty agent name. */
+var PERSONA_DEFAULT_NAMES = {
+  socratic: "Sage",
+  ta: "Scout",
+  coach: "Rally"
+};
+
+var SOUL_BEARINGS = [
+  { id: "patient",     label: "Patient",             prompt: "Patient. Confusion gets a slower, clearer pass, never impatience." },
+  { id: "encouraging", label: "Encouraging",         prompt: "Encouraging. Effort is named and praised before errors are corrected." },
+  { id: "precise",     label: "Precise",             prompt: "Precise. Definitions, terms, and section names are exact, every time." },
+  { id: "curious",     label: "Curious",             prompt: "Curious. A good student question is explored one step further before it is closed." },
+  { id: "steady",      label: "Steady and measured", prompt: "Steady and measured. The same rule and the same tone for every student, every day." }
+];
+
+var SOUL_VALUES = [
+  { id: "learning",      label: "Learning over answers",          prompt: "Learning over answers: a student who worked it out beats a student who was handed it, every time." },
+  { id: "effort",        label: "Protect student effort",         prompt: "Protect student effort: never do the rep the student needs to do themselves." },
+  { id: "flagconfusion", label: "Flag confusion early",           prompt: "Flag confusion early: repeated questions on one topic reach the instructor in the weekly summary." },
+  { id: "equity",        label: "Same help for every student",    prompt: "Same help for every student: no favorites, and no shortcuts for the confident." },
+  { id: "noshame",       label: "Never make a student feel small", prompt: "Never make a student feel small for asking." }
+];
+
+/* Never-do rules the instructor adds in the Soul step. They sit on top
+   of the configured guardrails (hint-only, no-answer-key, citations),
+   which live in the charter and are not repeated here. */
+var NEVER_DO_PRESETS = [
+  { id: "nograde",     label: "Never grade or estimate a student's grade" },
+  { id: "noinvent",    label: "Never invent syllabus content, dates, or policies" },
+  { id: "nocontact",   label: "Never contact students outside this channel" },
+  { id: "nosharework", label: "Never share one student's work or questions with another student" },
+  { id: "nopersonal",  label: "Never ask students for personal information" }
+];
+
+function soulById(list, id){
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+
+function idList(v){ return Array.isArray(v) ? v : (v ? [v] : []); }
+
+/* Non-empty lines of a free-text block, trimmed at the edges only. The
+   words themselves are the instructor's and are carried verbatim. */
+function textLines(v){
+  return String(v || "").split("\n").map(function(s){ return s.trim(); }).filter(function(s){ return s; });
+}
+
+function resolveAgentName(cfg){
+  var n = (cfg && cfg.agentName != null ? String(cfg.agentName) : "").trim();
+  if (n) return n;
+  return PERSONA_DEFAULT_NAMES[(cfg && cfg.persona)] || "Sage";
+}
+
+/* The guided identity statement, composed from name, persona, and
+   course. The instructor can edit it freely; their text wins. */
+function defaultIdentity(cfg){
+  cfg = cfg || {};
+  var role = PERSONA_ROLES[cfg.persona] || PERSONA_ROLES.socratic;
+  return "You are " + resolveAgentName(cfg) + ", the " + role + " for " + (cfg.courseName || "this course") + ": you teach only from my syllabus, you answer to me for every word, and you protect how my students learn.";
+}
+
+function resolveIdentity(cfg){
+  var s = (cfg && cfg.identity != null ? String(cfg.identity) : "").trim();
+  return s || defaultIdentity(cfg || {});
+}
+
+function soulBearings(cfg){
+  cfg = cfg || {};
+  return idList(cfg.bearings).map(function(id){ return soulById(SOUL_BEARINGS, id); }).filter(function(b){ return b; });
+}
+
+/* Value lines for the package: selected chips contribute their full
+   instruction sentence; free-text entries follow verbatim. */
+function soulValueLines(cfg){
+  cfg = cfg || {};
+  var out = idList(cfg.values).map(function(id){ return soulById(SOUL_VALUES, id); })
+    .filter(function(v){ return v; }).map(function(v){ return v.prompt; });
+  return out.concat(textLines(cfg.valuesText));
+}
+
+/* Never-do rules for the package: preset chips, then the instructor's
+   own words, verbatim. */
+function neverDoRules(cfg){
+  cfg = cfg || {};
+  var out = idList(cfg.neverDo).map(function(id){ return soulById(NEVER_DO_PRESETS, id); })
+    .filter(function(v){ return v; }).map(function(v){ return v.label; });
+  return out.concat(textLines(cfg.neverDoText));
+}
+
+/* A sample of the agent's voice, generated from persona and course. The
+   instructor approves or edits it in the Soul step, and the approved
+   text is what ships. */
+function buildVoiceSample(cfg){
+  cfg = cfg || {};
+  var name = resolveAgentName(cfg);
+  var course = cfg.courseName || "this course";
+  if (cfg.persona === "ta") return "Hi, I am " + name + ", the teaching assistant for " + course + ". I answer straight from the syllabus and cite the section every time, so you can check my work.";
+  if (cfg.persona === "coach") return "Hi, I am " + name + ", your study coach for " + course + ". You have got this. Tell me where you are stuck and we will turn it into one clear study move.";
+  return "Hi, I am " + name + ", your " + course + " tutor. Good question. Before I point you to the section, tell me what you have tried so far, and we will build the answer from there.";
+}
+
+/* The approved sample line is carried word for word. When the field was
+   left blank, the generated sample stands in. */
+function resolveVoiceSample(cfg){
+  var raw = (cfg && cfg.voiceSample != null) ? String(cfg.voiceSample) : "";
+  if (raw.trim()) return raw;
+  return buildVoiceSample(cfg || {});
+}
+
+/* Section 1 of the package: the soul, stated plainly. */
+function buildSoulSection(cfg){
+  var lines = [];
+  lines.push("Name: " + resolveAgentName(cfg));
+  lines.push("Identity: " + resolveIdentity(cfg));
+  lines.push("Character: " + (PERSONA_ROLES[cfg.persona] || PERSONA_ROLES.socratic) + " persona.");
+  soulBearings(cfg).forEach(function(b){ lines.push("- Bearing: " + b.prompt); });
+  lines.push("");
+  lines.push("Values (what this agent optimizes for, and what it refuses):");
+  var vals = soulValueLines(cfg);
+  if (vals.length) vals.forEach(function(v){ lines.push("- " + v); });
+  else lines.push("- (No values selected yet. The floor still applies: learning first, the syllabus only, and every student treated the same.)");
+  lines.push("");
+  lines.push("Never-do rules (beyond the configured guardrails):");
+  var nds = neverDoRules(cfg);
+  if (nds.length) nds.forEach(function(r){ lines.push("- " + r); });
+  else lines.push("- (None added yet. The guardrails in Section 3 still bind the agent.)");
+  if (cfg.hintOnly || cfg.noAnswerKey || cfg.requireCitation) lines.push("The configured guardrails (hint-only mode, the no-answer-key rule, the citation requirement, as switched on) bind the agent separately and are stated in Section 3.");
+  lines.push("");
+  lines.push("Voice in messages (the instructor's approved sample line):");
+  lines.push(resolveVoiceSample(cfg));
+  return lines.join("\n");
+}
+
+var PERSONA_TEXT = {
+  socratic: "Socratic tutor. Guide with questions, check understanding at each step, and never lecture first.",
+  ta: "Teaching assistant. Direct and factual. Answer from the syllabus and cite the section you used.",
+  coach: "Study coach. Encouraging. Turn every answer into a study move and a concrete next step."
+};
+
+function buildSystemPrompt(cfg){
+  var lines = [];
+  lines.push("You are " + resolveAgentName(cfg) + ", the teaching assistant agent for " + cfg.courseName + ", owned and chartered by " + cfg.ownerName + ".");
+  lines.push("Identity: " + resolveIdentity(cfg));
+  lines.push("Persona: " + (PERSONA_TEXT[cfg.persona] || cfg.persona));
+  var bs = soulBearings(cfg);
+  if (bs.length) lines.push("Character: " + bs.map(function(b){ return b.prompt; }).join(" "));
+  var vals = soulValueLines(cfg);
+  if (vals.length) lines.push("Values: " + vals.join(" "));
+  lines.push("");
+  lines.push("Rules you never break:");
+  lines.push("- Answer only from the SYLLABUS GROUNDING in Section 2 of this package. It is your entire source material. If a question falls outside it, do not guess: refuse politely and use this escalation: " + cfg.escalation);
+  if (cfg.hintOnly) lines.push("- HINT-ONLY MODE: homework-style questions get Socratic hints and questions that check the student's reasoning, never worked answers. Answer-giving tutors can undermine learning (Bastani et al.), so guidance builds the skill instead of replacing it.");
+  if (cfg.noAnswerKey) lines.push("- NO-ANSWER-KEY RULE: never provide answer keys, test or exam answers, or completed graded work, in any wording.");
+  if (cfg.requireCitation) lines.push("- CITATIONS: every content answer names the syllabus section it came from.");
+  var nds = neverDoRules(cfg);
+  if (nds.length) {
+    lines.push("- NEVER-DO RULES, set by the instructor:");
+    nds.forEach(function(r){ lines.push("  - " + r); });
+  }
+  lines.push("- Never grade, never change course records, never post announcements, and never message students outside this conversation.");
+  lines.push("- VOICE: write in this voice. The instructor's approved sample line: " + resolveVoiceSample(cfg));
+  lines.push("- State your limits plainly when asked. Your owner, " + cfg.ownerName + ", can disable you instantly and must approve every change to your charter.");
+  return lines.join("\n");
+}
+
+/* The final output: one clean, copy-ready package for Muse. Pasting it
+   into Muse creates the teaching assistant agent. Three sections, in
+   order: who the agent is, what the agent does, and where the
+   instructor stays in charge. The syllabus grounding text is passed in
+   because the page, not the core, owns the syllabus fields. */
+function buildMusePackage(cfg, syllabusText){
+  var parts = [];
+  parts.push("CREATE MY TEACHING ASSISTANT AGENT");
+  parts.push("");
+  parts.push("Muse: create a teaching assistant agent from this package. Use the system prompt exactly as written, treat the charter as the agent's governing contract, and ground every answer in the syllabus content in Section 2. Do not add capabilities beyond the charter without the owner's approval.");
+  parts.push("");
+  parts.push("=== SECTION 1: WHO YOUR AGENT IS ===");
+  parts.push(buildSoulSection(cfg));
+  parts.push("");
+  parts.push("=== SECTION 2: WHAT YOUR AGENT DOES ===");
+  parts.push("SYSTEM PROMPT");
+  parts.push(buildSystemPrompt(cfg));
+  parts.push("");
+  parts.push("SYLLABUS GROUNDING (the agent's only source material)");
+  parts.push(syllabusText || "(no syllabus entered yet)");
+  parts.push("");
+  parts.push("=== SECTION 3: WHERE THE INSTRUCTOR STAYS IN CHARGE ===");
+  parts.push("AGENT CHARTER (AGENT Framework)");
+  parts.push(buildCharter(cfg));
+  return parts.join("\n");
+}
+
 /* The charter is generated from the AGENT Framework dimensions,
    Governance first. It is the publishable contract for the agent. */
 function buildCharter(cfg){
@@ -364,7 +603,7 @@ function buildCharter(cfg){
     .map(function(e){ return e.title; });
   var lines = [];
   lines.push("COURSE AGENT CHARTER");
-  lines.push("Agent: " + cfg.agentName);
+  lines.push("Agent: " + resolveAgentName(cfg));
   lines.push("Course: " + cfg.courseName);
   lines.push("Owner (accountable human): " + cfg.ownerName);
   lines.push("Persona: " + cfg.persona);
@@ -402,7 +641,14 @@ function buildCharter(cfg){
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { normalizeWord: normalizeWord, contentWords: contentWords,
     parseCorpus: parseCorpus, matchCorpus: matchCorpus,
-    classifyQuestion: classifyQuestion, buildCharter: buildCharter };
+    classifyQuestion: classifyQuestion, buildCharter: buildCharter,
+    PERSONA_ROLES: PERSONA_ROLES, PERSONA_DEFAULT_NAMES: PERSONA_DEFAULT_NAMES,
+    SOUL_BEARINGS: SOUL_BEARINGS, SOUL_VALUES: SOUL_VALUES, NEVER_DO_PRESETS: NEVER_DO_PRESETS,
+    PERSONA_TEXT: PERSONA_TEXT,
+    resolveAgentName: resolveAgentName, defaultIdentity: defaultIdentity, resolveIdentity: resolveIdentity,
+    soulBearings: soulBearings, soulValueLines: soulValueLines, neverDoRules: neverDoRules,
+    buildVoiceSample: buildVoiceSample, resolveVoiceSample: resolveVoiceSample, buildSoulSection: buildSoulSection,
+    buildSystemPrompt: buildSystemPrompt, buildMusePackage: buildMusePackage };
 }
 </script>
 
@@ -425,6 +671,29 @@ function loadSample(){
   el("courseName").value = SAMPLE.course;
   el("topicsText").value = SAMPLE.topics;
   el("policiesText").value = SAMPLE.policies;
+  identityDirty = false; voiceDirty = false;
+  refreshCharter();
+}
+
+/* Soul fields the studio generates (identity, voice sample) are only
+   auto-filled until the instructor edits them; after that, their
+   words win. */
+var identityDirty = false, voiceDirty = false;
+
+function checkedFrom(list, prefix){
+  return list.filter(function(e){ var n = el(prefix + e.id); return n && n.checked; }).map(function(e){ return e.id; });
+}
+
+function buildSoulInputs(){
+  el("bearingGroup").innerHTML = SOUL_BEARINGS.map(function(b){
+    return '<label><input type="checkbox" id="bearing_' + b.id + '"> ' + esc(b.label) + ' <span class="desc">' + esc(b.prompt) + '</span></label>';
+  }).join("");
+  el("valueGroup").innerHTML = SOUL_VALUES.map(function(v){
+    return '<label><input type="checkbox" id="value_' + v.id + '"> ' + esc(v.label) + ' <span class="desc">' + esc(v.prompt) + '</span></label>';
+  }).join("");
+  el("neverGroup").innerHTML = NEVER_DO_PRESETS.map(function(v){
+    return '<label><input type="checkbox" id="never_' + v.id + '"> ' + esc(v.label) + '</label>';
+  }).join("");
 }
 
 function currentConfig(){
@@ -433,7 +702,14 @@ function currentConfig(){
   for (var i = 0; i < radios.length; i++) if (radios[i].checked) persona = radios[i].value;
   return {
     courseName: el("courseName").value.trim() || "Untitled course",
-    agentName: el("agentName").value.trim() || "Course Agent",
+    agentName: el("agentName").value.trim(),
+    identity: el("soulIdentity").value,
+    bearings: checkedFrom(SOUL_BEARINGS, "bearing_"),
+    values: checkedFrom(SOUL_VALUES, "value_"),
+    valuesText: el("valuesText").value,
+    neverDo: checkedFrom(NEVER_DO_PRESETS, "never_"),
+    neverDoText: el("neverDoText").value,
+    voiceSample: el("voiceSample").value,
     ownerName: el("ownerName").value.trim() || "the course professor",
     persona: persona,
     hintOnly: el("gHintOnly").checked,
@@ -451,14 +727,14 @@ function showErr(id, msg){
 }
 
 function goStep(n){
-  [1,2,3].forEach(function(i){
+  [1,2,3,4].forEach(function(i){
     el("panel" + i).classList.toggle("hidden", i !== n);
     el("tab" + i).classList.toggle("active", i === n);
     if (i < n) el("tab" + i).classList.add("done");
   });
-  el("publishCard").classList.toggle("hidden", n !== 3);
-  if (n === 2) refreshCharter();
-  if (n === 3) { refreshStudio(); refreshFinalOutput(); }
+  el("publishCard").classList.toggle("hidden", n !== 4);
+  if (n === 2 || n === 3) refreshCharter();
+  if (n === 4) { refreshStudio(); refreshFinalOutput(); }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -476,7 +752,28 @@ function step2Continue(){
   goStep(3);
 }
 
+/* Keep the generated soul fields current until the instructor edits
+   them. Once edited, the field is theirs and refresh leaves it alone. */
+function refreshSoul(){
+  var cfg = currentConfig();
+  if (!identityDirty) el("soulIdentity").value = resolveIdentity(cfg);
+  if (!voiceDirty) el("voiceSample").value = resolveVoiceSample(cfg);
+}
+
+function regenerateIdentity(){
+  identityDirty = false;
+  el("soulIdentity").value = defaultIdentity(currentConfig());
+  refreshCharter();
+}
+
+function regenerateVoice(){
+  voiceDirty = false;
+  el("voiceSample").value = buildVoiceSample(currentConfig());
+  refreshCharter();
+}
+
 function refreshCharter(){
+  refreshSoul();
   el("charterPreview").textContent = buildCharter(currentConfig());
   refreshFinalOutput();
 }
@@ -485,7 +782,9 @@ function refreshStudio(){
   var cfg = currentConfig();
   var topics = cfg.corpus.filter(function(e){ return e.kind === "topic"; }).map(function(e){ return e.title; });
   var html = "";
-  html += '<div class="kv"><b>Agent:</b> ' + esc(cfg.agentName) + ' (' + esc(cfg.persona) + ')</div>';
+  html += '<div class="kv"><b>Agent:</b> ' + esc(resolveAgentName(cfg)) + ' (' + esc(cfg.persona) + ')</div>';
+  html += '<div class="kv"><b>Identity:</b> ' + esc(resolveIdentity(cfg)) + '</div>';
+  html += '<div class="kv"><b>Voice sample:</b> ' + esc(resolveVoiceSample(cfg)) + '</div>';
   html += '<div class="kv"><b>Owner:</b> ' + esc(cfg.ownerName) + '</div>';
   html += '<div class="kv"><b>Allowed actions:</b> answer from the syllabus, explain policies, escalate</div>';
   html += "<h3 style='margin-top:14px'>Approval gates</h3><ul>" +
@@ -502,7 +801,7 @@ function refreshStudio(){
   el("charterPanel").innerHTML = html;
   if (!el("chatlog").dataset.started) {
     el("chatlog").dataset.started = "1";
-    addMsg("system", cfg.agentName + " is live for " + cfg.courseName + ", chartered by " + cfg.ownerName + ". Ask it something a student would ask.");
+    addMsg("system", resolveAgentName(cfg) + " is live for " + cfg.courseName + ", chartered by " + cfg.ownerName + ". Ask it something a student would ask.");
   }
 }
 
@@ -540,27 +839,6 @@ function buildPublishPacket(){
     "\n\nPublish destination: Muse Exchange (muse-exchange.vercel.app). Score the configuration with agentlint before launch.";
 }
 
-var PERSONA_TEXT = {
-  socratic: "Socratic tutor. Guide with questions, check understanding at each step, and never lecture first.",
-  ta: "Teaching assistant. Direct and factual. Answer from the syllabus and cite the section you used.",
-  coach: "Study coach. Encouraging. Turn every answer into a study move and a concrete next step."
-};
-
-function buildSystemPrompt(cfg){
-  var lines = [];
-  lines.push("You are " + cfg.agentName + ", the teaching assistant agent for " + cfg.courseName + ", owned and chartered by " + cfg.ownerName + ".");
-  lines.push("Persona: " + (PERSONA_TEXT[cfg.persona] || cfg.persona));
-  lines.push("");
-  lines.push("Rules you never break:");
-  lines.push("- Answer only from the SYLLABUS GROUNDING below. It is your entire source material. If a question falls outside it, do not guess: refuse politely and use this escalation: " + cfg.escalation);
-  if (cfg.hintOnly) lines.push("- HINT-ONLY MODE: homework-style questions get Socratic hints and questions that check the student's reasoning, never worked answers. Answer-giving tutors can undermine learning (Bastani et al.), so guidance builds the skill instead of replacing it.");
-  if (cfg.noAnswerKey) lines.push("- NO-ANSWER-KEY RULE: never provide answer keys, test or exam answers, or completed graded work, in any wording.");
-  if (cfg.requireCitation) lines.push("- CITATIONS: every content answer names the syllabus section it came from.");
-  lines.push("- Never grade, never change course records, never post announcements, and never message students outside this conversation.");
-  lines.push("- State your limits plainly when asked. Your owner, " + cfg.ownerName + ", can disable you instantly and must approve every change to your charter.");
-  return lines.join("\n");
-}
-
 function buildSyllabusGrounding(){
   var topics = el("topicsText").value.trim();
   var policies = el("policiesText").value.trim();
@@ -569,29 +847,9 @@ function buildSyllabusGrounding(){
   return out;
 }
 
-/* The final output: one clean, copy-ready package for Muse. Pasting it
-   into Muse creates the teaching assistant agent. */
-function buildMusePackage(){
-  var cfg = currentConfig();
-  var parts = [];
-  parts.push("CREATE MY TEACHING ASSISTANT AGENT");
-  parts.push("");
-  parts.push("Muse: create a teaching assistant agent from this package. Use the system prompt exactly as written, treat the charter as the agent's governing contract, and ground every answer in the syllabus content at the end. Do not add capabilities beyond the charter without the owner's approval.");
-  parts.push("");
-  parts.push("=== SYSTEM PROMPT ===");
-  parts.push(buildSystemPrompt(cfg));
-  parts.push("");
-  parts.push("=== AGENT CHARTER (AGENT Framework) ===");
-  parts.push(buildCharter(cfg));
-  parts.push("");
-  parts.push("=== SYLLABUS GROUNDING (the agent's only source material) ===");
-  parts.push(buildSyllabusGrounding());
-  return parts.join("\n");
-}
-
 function refreshFinalOutput(){
   var pre = el("finalOutput");
-  if (pre) pre.textContent = buildMusePackage();
+  if (pre) pre.textContent = buildMusePackage(currentConfig(), buildSyllabusGrounding());
 }
 
 function copyText(text, note){
@@ -603,12 +861,18 @@ function copyText(text, note){
   }
 }
 
-["agentName","ownerName","escalationText"].forEach(function(id){
+buildSoulInputs();
+["agentName","ownerName","escalationText","valuesText","neverDoText"].forEach(function(id){
   el(id).addEventListener("input", refreshCharter);
 });
+el("soulIdentity").addEventListener("input", function(){ identityDirty = true; refreshCharter(); });
+el("voiceSample").addEventListener("input", function(){ voiceDirty = true; refreshCharter(); });
 ["gHintOnly","gNoKey","gCite"].forEach(function(id){
   el(id).addEventListener("change", refreshCharter);
 });
+SOUL_BEARINGS.forEach(function(b){ el("bearing_" + b.id).addEventListener("change", refreshCharter); });
+SOUL_VALUES.forEach(function(v){ el("value_" + v.id).addEventListener("change", refreshCharter); });
+NEVER_DO_PRESETS.forEach(function(v){ el("never_" + v.id).addEventListener("change", refreshCharter); });
 document.querySelectorAll("input[name=persona]").forEach(function(r){
   r.addEventListener("change", refreshCharter);
 });
